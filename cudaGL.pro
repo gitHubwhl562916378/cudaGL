@@ -25,9 +25,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        widget.cpp
+        widget.cpp \
+    cudaglrender.cpp
 
 HEADERS += \
-        widget.h
+        widget.h \
+    cudaglrender.h
 
 include(cuda/cuda.pri)
+LIBS += opengl32.lib
+
+DISTFILES += \
+    fragment.fsh \
+    vertex.vsh
