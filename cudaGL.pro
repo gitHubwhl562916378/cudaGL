@@ -29,3 +29,5 @@ SOURCES += \
 
 HEADERS += \
         widget.h
+
+include(cuda/cuda.pri)

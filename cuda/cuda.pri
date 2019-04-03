@@ -8,33 +8,36 @@ NVCC_OPTIONS = --use-local-env --cl-version 2015 -gencode=arch=compute_35,code=s
 win32{
 INCLUDEPATH += $$(CUDA_PATH)\include
 contains(QT_ARCH,i386){
-    QMAKE_LIBDIR += $$(CUDA_PATH)/lib/Win32
+    QMAKE_LIBDIR += $$(CUDA_PATH)\lib\Win32
     CUDA_LIBS = cuda.lib cudart.lib
     LIBS += $$CUDA_LIBS
     CONFIG(debug, debug | release){
-        cuda_d.input = CUDA_SOURCE
-        cuda_d.output = cuda/${QMAKE_FILE_BASE}.o
-        cuda_d.commands = $$(CUDA_PATH)/bin/nvcc -D_DEBUG $$join(INCLUDEPATH,'" -I"','-I"','"') --machine 32 $$NVCC_OPTIONS \
-                          -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
-        cuda_d.dependency_type = TYPE_C
-        QMAKE_EXTRA_COMPILERS += cuda_d
+        NVCC_OPTIONS += -Xcompiler \"/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd\"
     }else{
-
+        NVCC_OPTIONS += -Xcompiler \"/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MD\"
     }
+
+    cuda_d.input = CUDA_SOURCE
+    cuda_d.output = cuda/${QMAKE_FILE_BASE}.o
+    cuda_d.commands = $$(CUDA_PATH)\bin\nvcc $$join(INCLUDEPATH,'" -I"','-I"','"') --machine 32 -Xcompiler $$NVCC_OPTIONS \
+                      -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
+    cuda_d.dependency_type = TYPE_C
+    QMAKE_EXTRA_COMPILERS += cuda_d
 }else{
     QMAKE_LIBDIR += $$(CUDA_PATH)\lib\x64
     CUDA_LIBS = cuda.lib cudart.lib
     LIBS += $$CUDA_LIBS
     CONFIG(debug, debug | release){
         NVCC_OPTIONS += -Xcompiler \"/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd\"
-        cuda_d.input = CUDA_SOURCE
-        cuda_d.output = cuda/${QMAKE_FILE_BASE}.o
-        cuda_d.commands = $$(CUDA_PATH)\bin\nvcc -D_DEBUG $$join(INCLUDEPATH,'" -I"','-I"','"') --machine 64 -Xcompiler $$NVCC_OPTIONS \
-                          -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
-        cuda_d.dependency_type = TYPE_C
-        QMAKE_EXTRA_COMPILERS += cuda_d
     }else{
-
+        NVCC_OPTIONS += -Xcompiler \"/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MD\"
     }
+
+    cuda_d.input = CUDA_SOURCE
+    cuda_d.output = cuda/${QMAKE_FILE_BASE}.o
+    cuda_d.commands = $$(CUDA_PATH)\bin\nvcc $$join(INCLUDEPATH,'" -I"','-I"','"') --machine 64 -Xcompiler $$NVCC_OPTIONS \
+                      -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
+    cuda_d.dependency_type = TYPE_C
+    QMAKE_EXTRA_COMPILERS += cuda_d
 }
 }
