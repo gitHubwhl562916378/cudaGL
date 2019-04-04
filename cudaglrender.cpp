@@ -87,6 +87,8 @@ void CudaGLRender::render(QOpenGLExtraFunctions *f, QMatrix4x4 pMatrix, QMatrix4
     f->glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
     f->glBindTexture(GL_TEXTURE_2D,textureID);
     f->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_width, image_height,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    f->glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    f->glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 
     program_.enableAttributeArray(0);
     program_.enableAttributeArray(1);
