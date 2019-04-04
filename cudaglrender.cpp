@@ -19,7 +19,7 @@ void CudaGLRender::initsize(QOpenGLExtraFunctions *f)
    bool isOk =  gpuInit();
    if(!isOk)return;
 
-   pixVBO_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+   pixVBO_ = new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer);
    pixVBO_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
    pixVBO_->create();
    pixVBO_->bind();
@@ -62,7 +62,6 @@ void CudaGLRender::render(QOpenGLExtraFunctions *f, QMatrix4x4 pMatrix, QMatrix4
     f->glDisable(GL_DEPTH_TEST);
     f->glEnable(GL_CULL_FACE);
     program_.bind();
-    vbo_.bind();
     program_.setUniformValue("uPMatrix",pMatrix);
     program_.setUniformValue("uVMatrix",vMatrix);
     program_.setUniformValue("uMMatrix",mMatrix);
@@ -87,7 +86,7 @@ void CudaGLRender::render(QOpenGLExtraFunctions *f, QMatrix4x4 pMatrix, QMatrix4
     if(res != cudaSuccess){
         qDebug() << __FILE__ << __LINE__ << "cudaGraphicsUnmapResources:" << res;
     }
-#if 1 //从显存中的pixVBO_ 加载到显存中的纹理
+#if 0 //从显存中的pixVBO_ 加载到显存中的纹理
     f->glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pixVBO_->bufferId());
     f->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_width, image_height,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     f->glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
@@ -98,13 +97,14 @@ void CudaGLRender::render(QOpenGLExtraFunctions *f, QMatrix4x4 pMatrix, QMatrix4
 
     program_.enableAttributeArray(0);
     program_.enableAttributeArray(1);
+    vbo_.bind();
     program_.setAttributeBuffer(0,GL_FLOAT,0,3,3*sizeof(GLfloat));
     program_.setAttributeBuffer(1,GL_FLOAT,3 * 4 * sizeof(GLfloat),2,2*sizeof(GLfloat));
+    vbo_.release();
     texture_->bind();
     f->glDrawArrays(GL_TRIANGLE_FAN,0,4);
     program_.disableAttributeArray(0);
     program_.disableAttributeArray(1);
-    vbo_.release();
     program_.release();
     f->glDisable(GL_CULL_FACE);
 }
