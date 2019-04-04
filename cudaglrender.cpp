@@ -87,7 +87,14 @@ void CudaGLRender::render(QOpenGLExtraFunctions *f, QMatrix4x4 pMatrix, QMatrix4
     if(res != cudaSuccess){
         qDebug() << __FILE__ << __LINE__ << "cudaGraphicsUnmapResources:" << res;
     }
+#if 1 //从显存中的pixVBO_ 加载到显存中的纹理
+    f->glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pixVBO_->bufferId());
+    f->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_width, image_height,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    f->glBindBuffer(GL_PIXEL_PACK_BUFFER_ARB, 0);
+    f->glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+#else //从显存中的pixVBO_先映射到cpu应用空间，先读到cpu再写到显存中的纹理
     texture_->setData(QOpenGLTexture::RGBA,QOpenGLTexture::UInt8,pixVBO_->map(QOpenGLBuffer::ReadOnly));
+#endif
 
     program_.enableAttributeArray(0);
     program_.enableAttributeArray(1);
