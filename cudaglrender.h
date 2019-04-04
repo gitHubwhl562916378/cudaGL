@@ -18,9 +18,9 @@ protected:
 
 private:
     QOpenGLShaderProgram program_;
-    QOpenGLBuffer vbo_;
+    QOpenGLBuffer vbo_,*pixVBO_{nullptr};
     int image_width = 512,image_height = 512;
-    GLuint pbo,textureID;
+    QOpenGLTexture *texture_{nullptr};
     unsigned int *cuda_dest_resource{nullptr};
     cudaGraphicsResource *cuda_tex_result_resource{nullptr};
 };
