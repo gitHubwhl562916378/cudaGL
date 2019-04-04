@@ -19,7 +19,7 @@ void CudaGLRender::initsize(QOpenGLExtraFunctions *f)
    bool isOk =  gpuInit();
    if(!isOk)return;
 
-   pixVBO_ = new QOpenGLBuffer(QOpenGLBuffer::PixelPackBuffer);
+   pixVBO_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
    pixVBO_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
    pixVBO_->create();
    pixVBO_->bind();

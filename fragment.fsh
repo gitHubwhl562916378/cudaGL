@@ -1,4 +1,4 @@
-#version 130
+#version 330
 uniform sampler2D sTexture;
 in vec2 vTextureCood;
 out vec4 fragColor;
