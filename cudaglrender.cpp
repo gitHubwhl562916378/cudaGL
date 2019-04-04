@@ -19,22 +19,24 @@ void CudaGLRender::initsize(QOpenGLExtraFunctions *f)
    bool isOk =  gpuInit();
    if(!isOk)return;
 
-   texture_ = new QOpenGLTexture(QOpenGLTexture::Target2D);
-   texture_->create();
-   texture_->setSize(image_width,image_height);
-   texture_->setFormat(QOpenGLTexture::RGBA8_UNorm);
-   texture_->allocateStorage();
-   texture_->setWrapMode(QOpenGLTexture::ClampToEdge);
-   texture_->setMinMagFilters(QOpenGLTexture::NearestMipMapLinear,QOpenGLTexture::NearestMipMapLinear);
+   f->glGenBuffers(1,&pbo);
+   f->glBindBuffer(GL_ARRAY_BUFFER,pbo);
+   f->glBufferData(GL_ARRAY_BUFFER,image_width * image_height * 4 * sizeof(GLubyte),nullptr,GL_DYNAMIC_DRAW);
    cudaError res;//GL_RGBA8UI_EXT GL_RGBA_INTEGER_EXT
-   res = cudaGraphicsGLRegisterImage(&cuda_tex_result_resource,texture_->textureId(),GL_TEXTURE_2D,cudaGraphicsMapFlagsWriteDiscard);
+   res = cudaGraphicsGLRegisterBuffer(&cuda_tex_result_resource,pbo,cudaGraphicsMapFlagsNone);
    if(res != cudaSuccess){
-       qDebug() << __FILE__ << __LINE__ << "cudaGraphicsGLRegisterImage:" << res;
+       qDebug() << __FILE__ << __LINE__ << "cudaGraphicsGLRegisterBuffer:" << res;
    }
    res = cudaMalloc((void**)&cuda_dest_resource,image_width * image_height * 4 * sizeof(GLubyte));
    if(res != cudaSuccess){
        qDebug() << __FILE__ << __LINE__ << "cudaMalloc:" << res;
    }
+
+   f->glGenTextures(1,&textureID);
+   f->glBindTexture(GL_TEXTURE_2D,textureID);
+   f->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+   f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
    GLfloat points[]{
        -1,1,0,
@@ -67,28 +69,29 @@ void CudaGLRender::render(QOpenGLExtraFunctions *f, QMatrix4x4 pMatrix, QMatrix4
     dim3 block(16,16,1);
     dim3 grid(image_width / block.x,image_height / block.y,1);
     launch_cudaProcess(grid, block, 0, cuda_dest_resource, image_width);
-    cudaArray *texture_ptr;
+    uchar4  *texture_ptr;
+    size_t num_bytes;
     res = cudaGraphicsMapResources(1,&cuda_tex_result_resource,0);
     if(res != cudaSuccess){
         qDebug() << __FILE__ << __LINE__ << "cudaGraphicsMapResources:" << res;
     }
-    res = cudaGraphicsSubResourceGetMappedArray(&texture_ptr,cuda_tex_result_resource,0,0);
+    res = cudaGraphicsResourceGetMappedPointer((void**)&texture_ptr,&num_bytes,cuda_tex_result_resource);
     if(res != cudaSuccess){
         qDebug() << __FILE__ << __LINE__ << "cudaGraphicsSubResourceGetMappedArray:" << res;
     }
-    res = cudaMemcpyToArray(texture_ptr, 0, 0, cuda_dest_resource, image_width * image_height * 4 * sizeof(GLubyte), cudaMemcpyDeviceToDevice);
+    res = cudaMemcpy((void**)texture_ptr, (void**)cuda_dest_resource,image_width * image_height * 4 * sizeof(GLubyte), cudaMemcpyDeviceToDevice);
     res = cudaGraphicsUnmapResources(1, &cuda_tex_result_resource, 0);
     if(res != cudaSuccess){
         qDebug() << __FILE__ << __LINE__ << "cudaGraphicsUnmapResources:" << res;
     }
-//    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-//    cudaDeviceSynchronize();
+    f->glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+    f->glBindTexture(GL_TEXTURE_2D,textureID);
+    f->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_width, image_height,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     program_.enableAttributeArray(0);
     program_.enableAttributeArray(1);
     program_.setAttributeBuffer(0,GL_FLOAT,0,3,3*sizeof(GLfloat));
     program_.setAttributeBuffer(1,GL_FLOAT,3 * 4 * sizeof(GLfloat),2,2*sizeof(GLfloat));
-    texture_->bind();
     f->glDrawArrays(GL_TRIANGLE_FAN,0,4);
     program_.disableAttributeArray(0);
     program_.disableAttributeArray(1);

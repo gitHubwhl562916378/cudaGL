@@ -20,7 +20,7 @@ private:
     QOpenGLShaderProgram program_;
     QOpenGLBuffer vbo_;
     int image_width = 512,image_height = 512;
-    QOpenGLTexture *texture_{nullptr};
+    GLuint pbo,textureID;
     unsigned int *cuda_dest_resource{nullptr};
     cudaGraphicsResource *cuda_tex_result_resource{nullptr};
 };
